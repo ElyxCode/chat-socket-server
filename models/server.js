@@ -5,6 +5,7 @@ const socketIo = require('socket.io');
 const path = require('path');
 const Sockets = require('./sockets');
 const cors = require('cors');
+const { dbConnection } = require('../database/config');
 
 
 class Server {
@@ -12,11 +13,19 @@ class Server {
         this.app = express();
         this.port = process.env.PORT;
 
+        // Conectar DB.
+        dbConnection();
+
         // http server.
         this.server = http.createServer(this.app);
 
         // Configuracion del socket server.
-        this.io = socketIo(this.server, { /* configuraciones */ });
+        this.io = socketIo(this.server, {
+            cors: {
+                origin: '*',
+                methods: ['GET', 'POST']
+            }
+        });
     }
 
     middlewares() {
@@ -25,6 +34,13 @@ class Server {
 
        // CORS
        this.app.use(cors());
+
+       // Parseo del body
+       this.app.use(express.json());
+
+       // API Endpoints
+       this.app.use('/api/login', require('../router/auth'));
+       this.app.use('/api/message', require('../router/message'));
     }
 
     // Configuración de sockets.
